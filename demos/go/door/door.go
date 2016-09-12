@@ -9,8 +9,8 @@ import (
 	"os"
 	"time"
 
-	nexus "github.com/jaracil/nxcli/nxcore"
 	"github.com/jessevdk/go-flags"
+	nexus "github.com/nayarsystems/nxgo/nxcore"
 )
 
 var opts struct {

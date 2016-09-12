@@ -1,12 +1,12 @@
 // +build js
 
-package nexus
+package nxgo
 
 import (
 	"net/url"
 
-	"github.com/jaracil/nxcli/nxcore"
 	"github.com/jaracil/wsck"
+	"github.com/nayarsystems/nxgo/nxcore"
 )
 
 func Dial(s string, _ interface{}) (*nxcore.NexusConn, error) {

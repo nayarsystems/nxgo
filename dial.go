@@ -1,6 +1,6 @@
 // +build !js
 
-package nexus
+package nxgo
 
 import (
 	"crypto/tls"
@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jaracil/nxcli/nxcore"
+	"github.com/nayarsystems/nxgo/nxcore"
 	"golang.org/x/net/websocket"
 )
 

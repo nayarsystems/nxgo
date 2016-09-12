@@ -1,11 +1,11 @@
-package nexus
+package nxgo
 
 import (
 	"strconv"
 	"strings"
 
 	"github.com/jaracil/ei"
-	"github.com/jaracil/nxcli/nxcore"
+	"github.com/nayarsystems/nxgo/nxcore"
 )
 
 var Version = &nxcore.NxVersion{

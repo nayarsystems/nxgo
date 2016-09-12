@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	nxcli "github.com/jaracil/nxcli"
-	"github.com/jaracil/nxcli/nxcore"
+	nxcli "github.com/nayarsystems/nxgo"
+	"github.com/nayarsystems/nxgo/nxcore"
 
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/jaracil/ei"
