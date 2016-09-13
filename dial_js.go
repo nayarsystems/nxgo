@@ -3,11 +3,14 @@
 package nxgo
 
 import (
+	"fmt"
 	"net/url"
 
 	"github.com/jaracil/wsck"
 	"github.com/nayarsystems/nxgo/nxcore"
 )
+
+var ErrVersionIncompatible = fmt.Errorf("incompatible version")
 
 func Dial(s string, _ interface{}) (*nxcore.NexusConn, error) {
 
@@ -22,5 +25,12 @@ func Dial(s string, _ interface{}) (*nxcore.NexusConn, error) {
 		return nil, err
 	}
 
-	return nxcore.NewNexusConn(conn), nil
+	nxconn := nxcore.NewNexusConn(conn)
+
+	nxconn.NexusVersion = getNexusVersion(nxconn)
+	if !isVersionCompatible(nxconn.NexusVersion) {
+		return nxconn, ErrVersionIncompatible
+	}
+
+	return nxconn, nil
 }
