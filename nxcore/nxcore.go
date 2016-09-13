@@ -16,17 +16,19 @@ import (
 const (
 	ErrParse            = -32700
 	ErrInvalidRequest   = -32600
-	ErrMethodNotFound   = -32601
-	ErrInvalidParams    = -32602
 	ErrInternal         = -32603
-	ErrTimeout          = -32000
-	ErrCancel           = -32001
-	ErrInvalidTask      = -32002
-	ErrInvalidPipe      = -32003
-	ErrInvalidUser      = -32004
-	ErrUserExists       = -32005
-	ErrPermissionDenied = -32010
+	ErrInvalidParams    = -32602
+	ErrMethodNotFound   = -32601
 	ErrTtlExpired       = -32011
+	ErrPermissionDenied = -32010
+	ErrConnClosed       = -32007
+	ErrLockNotOwned     = -32006
+	ErrUserExists       = -32005
+	ErrInvalidUser      = -32004
+	ErrInvalidPipe      = -32003
+	ErrInvalidTask      = -32002
+	ErrCancel           = -32001
+	ErrTimeout          = -32000
 )
 
 var ErrStr = map[int]string{
@@ -43,6 +45,8 @@ var ErrStr = map[int]string{
 	ErrUserExists:       "User already exists",
 	ErrPermissionDenied: "Permission denied",
 	ErrTtlExpired:       "TTL expired",
+	ErrLockNotOwned:     "Lock not owned",
+	ErrConnClosed:       "Connection is closed",
 }
 
 type JsonRpcErr struct {
@@ -109,19 +113,40 @@ type NexusConn struct {
 	context      context.Context
 	cancelFun    context.CancelFunc
 	wdog         int64
+	NexusVersion *NxVersion
+}
+
+type NxVersion struct {
+	Major int
+	Minor int
+	Patch int
+}
+
+func (v *NxVersion) String() string {
+	return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch)
 }
 
 // Task represents a task pushed to Nexus.
 type Task struct {
-	nc     *NexusConn
-	taskId string
-	Path   string
-	Method string
-	Params interface{}
-	Prio   int
-	Detach bool
-	User   string
-	Tags   map[string]interface{}
+	nc           *NexusConn
+	Id           string                 `json:"id"`
+	Stat         string                 `json:"state""`
+	Path         string                 `json:"path"`
+	Prio         int                    `json:"priority"`
+	Ttl          int                    `json:"ttl"`
+	Detach       bool                   `json:"detached"`
+	User         string                 `json:"user"`
+	Method       string                 `json:"method"`
+	Params       interface{}            `json:"params"`
+	LocalId      interface{}            `json:"-"`
+	Tses         string                 `json:"targetSession"`
+	Result       interface{}            `json:"result"`
+	ErrCode      *int                   `json:"errCode"`
+	ErrStr       string                 `json:"errString"`
+	ErrObj       interface{}            `json:"errObject"`
+	Tags         map[string]interface{} `json:"tags"`
+	CreationTime time.Time              `json:"creationTime"`
+	DeadLine     time.Time              `json:"deadline"`
 }
 
 // TaskOpts represents task push options.
@@ -180,12 +205,13 @@ type PipeOpts struct {
 // NewNexusConn creates new nexus connection from net.conn
 func NewNexusConn(conn net.Conn) *NexusConn {
 	nc := &NexusConn{
-		conn:     conn,
-		connRx:   smartio.NewSmartReader(conn),
-		connTx:   smartio.NewSmartWriter(conn),
-		resTable: make(map[uint64]chan *JsonRpcRes),
-		chReq:    make(chan *JsonRpcReq, 16),
-		wdog:     60,
+		conn:         conn,
+		connRx:       smartio.NewSmartReader(conn),
+		connTx:       smartio.NewSmartWriter(conn),
+		resTable:     make(map[uint64]chan *JsonRpcRes),
+		chReq:        make(chan *JsonRpcReq, 16),
+		wdog:         60,
+		NexusVersion: &NxVersion{0, 0, 0},
 	}
 	nc.context, nc.cancelFun = context.WithCancel(context.Background())
 	go nc.sendWorker()
@@ -198,7 +224,7 @@ func (nc *NexusConn) pushReq(req *JsonRpcReq) (err error) {
 	select {
 	case nc.chReq <- req:
 	case <-nc.context.Done():
-		err = NewJsonRpcErr(ErrCancel, "", nil)
+		err = NewJsonRpcErr(ErrConnClosed, "", nil)
 	}
 	return
 }
@@ -207,7 +233,7 @@ func (nc *NexusConn) pullReq() (req *JsonRpcReq, err error) {
 	select {
 	case req = <-nc.chReq:
 	case <-nc.context.Done():
-		err = NewJsonRpcErr(ErrCancel, "", nil)
+		err = NewJsonRpcErr(ErrConnClosed, "", nil)
 	}
 	return
 }
@@ -320,7 +346,7 @@ func (nc *NexusConn) Closed() bool {
 // ExecNoWait is a low level JSON-RPC call function, it don't wait response from server.
 func (nc *NexusConn) ExecNoWait(method string, params interface{}) (id uint64, rch chan *JsonRpcRes, err error) {
 	if nc.Closed() {
-		err = NewJsonRpcErr(ErrCancel, "", nil)
+		err = NewJsonRpcErr(ErrConnClosed, "", nil)
 		return
 	}
 	id, rch = nc.newId()
@@ -352,7 +378,7 @@ func (nc *NexusConn) Exec(method string, params interface{}) (result interface{}
 			result = res.Result
 		}
 	case <-nc.context.Done():
-		err = NewJsonRpcErr(ErrCancel, "", nil)
+		err = NewJsonRpcErr(ErrConnClosed, "", nil)
 	}
 	return
 }
@@ -371,7 +397,7 @@ func (nc *NexusConn) Ping(timeout time.Duration) (err error) {
 	case <-time.After(timeout):
 		err = NewJsonRpcErr(ErrTimeout, "", nil)
 	case <-nc.context.Done():
-		err = NewJsonRpcErr(ErrCancel, "", nil)
+		err = NewJsonRpcErr(ErrConnClosed, "", nil)
 	}
 	return
 }
@@ -387,14 +413,8 @@ func (nc *NexusConn) Login(user string, pass string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	nc.connId = ei.N(res).M("connId").StringZ()
+	nc.connId = ei.N(res).M("connid").StringZ()
 	return res, nil
-}
-
-// Reload forces the node owner of the client connection to reload its info (tags)
-// Returns the response object from Nexus or error.
-func (nc *NexusConn) Reload() (interface{}, error) {
-	return nc.Exec("sys.reload", nil)
 }
 
 // Id returns the connection id after a login.

@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/gopherjs/gopherjs/js"
-	"github.com/jaracil/nxcli"
-	"github.com/jaracil/nxcli/nxcore"
+	"github.com/nayarsystems/nxgo"
+	"github.com/nayarsystems/nxgo/nxcore"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 
 	dial := func(a string, cb func(interface{}, error)) {
 		go func() {
-			nc, e := nexus.Dial(a, nil)
+			nc, e := nxgo.Dial(a, nil)
 			cb(WrapNexusConn(nc), e)
 		}()
 	}

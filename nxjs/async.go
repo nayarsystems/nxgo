@@ -3,7 +3,8 @@ package main
 import (
 	"time"
 
-	"github.com/jaracil/nxcli/nxcore"
+	nxcli "github.com/nayarsystems/nxgo"
+	"github.com/nayarsystems/nxgo/nxcore"
 
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/jaracil/ei"
@@ -177,9 +178,33 @@ func WrapNexusConn(nc *nxcore.NexusConn) *js.Object {
 			ret(r, e, cb)
 		}()
 	})
-	jsnc.Set("userListTemplate", func(user string, cb ...*js.Object) {
+	jsnc.Set("userAddWhitelist", func(user string, ip string, cb ...*js.Object) {
 		go func() {
-			r, e := nc.UserListTemplate(user)
+			r, e := nc.UserAddWhitelist(user, ip)
+			ret(r, e, cb)
+		}()
+	})
+	jsnc.Set("userDelWhitelist", func(user string, ip string, cb ...*js.Object) {
+		go func() {
+			r, e := nc.UserDelWhitelist(user, ip)
+			ret(r, e, cb)
+		}()
+	})
+	jsnc.Set("userAddBlacklist", func(user string, ip string, cb ...*js.Object) {
+		go func() {
+			r, e := nc.UserAddBlacklist(user, ip)
+			ret(r, e, cb)
+		}()
+	})
+	jsnc.Set("userDelBlacklist", func(user string, ip string, cb ...*js.Object) {
+		go func() {
+			r, e := nc.UserDelBlacklist(user, ip)
+			ret(r, e, cb)
+		}()
+	})
+	jsnc.Set("userSetMaxSessions", func(user string, max int, cb ...*js.Object) {
+		go func() {
+			r, e := nc.UserSetMaxSessions(user, max)
 			ret(r, e, cb)
 		}()
 	})
@@ -204,6 +229,12 @@ func WrapNexusConn(nc *nxcore.NexusConn) *js.Object {
 	jsnc.Set("nodeList", func(limit int, skip int, cb ...*js.Object) {
 		go func() {
 			r, e := nc.NodeList(limit, skip)
+			ret(r, e, cb)
+		}()
+	})
+	jsnc.Set("node", func(cb ...*js.Object) {
+		go func() {
+			r, e := nc.Node()
 			ret(r, e, cb)
 		}()
 	})
@@ -248,6 +279,18 @@ func WrapNexusConn(nc *nxcore.NexusConn) *js.Object {
 			ret(r, e, cb)
 		}()
 	})
+	jsnc.Set("lock", func(lock string, cb ...*js.Object) {
+		go func() {
+			r, e := nc.Lock(lock)
+			ret(r, e, cb)
+		}()
+	})
+	jsnc.Set("unlock", func(lock string, cb ...*js.Object) {
+		go func() {
+			r, e := nc.Unlock(lock)
+			ret(r, e, cb)
+		}()
+	})
 	jsnc.Set("exec", func(method string, params interface{}, cb ...*js.Object) {
 		go func() {
 			r, e := nc.Exec(method, params)
@@ -261,6 +304,8 @@ func WrapNexusConn(nc *nxcore.NexusConn) *js.Object {
 		}()
 	})
 	jsnc.Set("closed", nc.Closed)
+	jsnc.Set("version", func() string { return nxcli.Version.String() })
+	jsnc.Set("nexusVersion", func() string { return nxcli.NexusVersion.String() })
 	jsnc.Set("ping", func(timeout float64, cb ...*js.Object) {
 		go func() {
 			e := nc.Ping(time.Duration(timeout * float64(time.Second)))

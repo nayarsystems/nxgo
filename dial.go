@@ -1,6 +1,6 @@
 // +build !js
 
-package nexus
+package nxgo
 
 import (
 	"crypto/tls"
@@ -11,9 +11,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jaracil/nxcli/nxcore"
+	"github.com/nayarsystems/nxgo/nxcore"
 	"golang.org/x/net/websocket"
 )
+
+var ErrVersionIncompatible = fmt.Errorf("incompatible version")
 
 type DialOptions struct {
 	WsConfig  *websocket.Config
@@ -125,5 +127,12 @@ func Dial(s string, opts *DialOptions) (*nxcore.NexusConn, error) {
 		return nil, err
 	}
 
-	return nxcore.NewNexusConn(conn), nil
+	nxconn := nxcore.NewNexusConn(conn)
+
+	nxconn.NexusVersion = getNexusVersion(nxconn)
+	if !isVersionCompatible(nxconn.NexusVersion) {
+		return nxconn, ErrVersionIncompatible
+	}
+
+	return nxconn, nil
 }
