@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/nayarsystems/nxgo/nxcore"
 	"golang.org/x/net/websocket"
@@ -18,16 +19,20 @@ import (
 var ErrVersionIncompatible = fmt.Errorf("incompatible version")
 
 type DialOptions struct {
-	WsConfig  *websocket.Config
-	TlsConfig *tls.Config
+	WsConfig    *websocket.Config
+	TlsConfig   *tls.Config
+	DialTimeout time.Duration
+	PingTimeout time.Duration
 }
 
 func NewDialOptions() *DialOptions {
 	conf, _ := websocket.NewConfig("http://localhost", "http://nexusclient.go")
 	conf.TlsConfig = &tls.Config{}
 	return &DialOptions{
-		WsConfig:  conf,
-		TlsConfig: &tls.Config{},
+		WsConfig:    conf,
+		TlsConfig:   &tls.Config{},
+		DialTimeout: time.Second * 60,
+		PingTimeout: time.Second * 60,
 	}
 }
 
@@ -86,14 +91,15 @@ func Dial(s string, opts *DialOptions) (*nxcore.NexusConn, error) {
 				v.Port = 1717
 			}
 			t := fmt.Sprintf("%s:%d", v.Host, v.Port)
-			conn, err = net.Dial("tcp", t)
+			conn, err = net.DialTimeout("tcp", t, opts.DialTimeout)
 
 		case "ssl":
 			if v.Port == 0 {
 				v.Port = 1718
 			}
 			t := fmt.Sprintf("%s:%d", v.Host, v.Port)
-			conn, err = tls.Dial("tcp", t, opts.TlsConfig)
+			dialer := &net.Dialer{Timeout: opts.DialTimeout}
+			conn, err = tls.DialWithDialer(dialer, "tcp", t, opts.TlsConfig)
 
 		case "ws":
 			if v.Port == 0 {
@@ -128,6 +134,10 @@ func Dial(s string, opts *DialOptions) (*nxcore.NexusConn, error) {
 	}
 
 	nxconn := nxcore.NewNexusConn(conn)
+
+	if err := nxconn.Ping(opts.PingTimeout); err != nil {
+		return nil, err
+	}
 
 	nxconn.NexusVersion = getNexusVersion(nxconn)
 	if !isVersionCompatible(nxconn.NexusVersion) {
