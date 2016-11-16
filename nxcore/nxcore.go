@@ -74,10 +74,12 @@ func (e *JsonRpcErr) Data() interface{} {
 // data is an optional extra info object.
 func NewJsonRpcErr(code int, message string, data interface{}) error {
 	if code < 0 {
-		if message != "" {
-			message = fmt.Sprintf("%s:[%s]", ErrStr[code], message)
-		} else {
-			message = ErrStr[code]
+		if errstr, ok := ErrStr[code]; ok {
+			if message != "" {
+				message = fmt.Sprintf("%s:[%s]", errstr, message)
+			} else {
+				message = errstr
+			}
 		}
 	}
 

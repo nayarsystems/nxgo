@@ -130,10 +130,12 @@ func (t *Task) SendResult(res interface{}) (interface{}, error) {
 // Returns the response object from Nexus or error.
 func (t *Task) SendError(code int, message string, data interface{}) (interface{}, error) {
 	if code < 0 {
-		if message != "" {
-			message = fmt.Sprintf("%s:[%s]", ErrStr[code], message)
-		} else {
-			message = ErrStr[code]
+		if errstr, ok := ErrStr[code]; ok {
+			if message != "" {
+				message = fmt.Sprintf("%s:[%s]", errstr, message)
+			} else {
+				message = errstr
+			}
 		}
 	}
 	par := map[string]interface{}{
