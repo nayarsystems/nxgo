@@ -171,6 +171,6 @@ func (t *Task) GetConn() *NexusConn {
 
 // NewTask creates a new task with the provided Nexus connection.
 // Usually tasks are created on TaskPull, but this method is usefull for testing purposes.
-func NewTask(conn *NexusConn) {
+func NewTask(conn *NexusConn) *Task {
 	return &Task{nc: conn}
 }
