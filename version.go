@@ -10,7 +10,7 @@ import (
 
 var Version = &nxcore.NxVersion{
 	Major: 1,
-	Minor: 1,
+	Minor: 2,
 	Patch: 0,
 }
 

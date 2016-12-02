@@ -168,3 +168,9 @@ func (t *Task) Accept() (interface{}, error) {
 func (t *Task) GetConn() *NexusConn {
 	return t.nc
 }
+
+// NewTask creates a new task with the provided Nexus connection.
+// Usually tasks are created on TaskPull, but this method is usefull for testing purposes.
+func NewTask(conn *NexusConn) {
+	return &Task{nc: conn}
+}
