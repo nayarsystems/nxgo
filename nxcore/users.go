@@ -56,6 +56,15 @@ func (nc *NexusConn) UserList(prefix string, limit int, skip int) ([]UserInfo, e
 	return users, nil
 }
 
+// UserGetTags gets the user tags
+// Returns the response object from Nexus or error.
+func (nc *NexusConn) UserGetTags(user string) (interface{}, error) {
+	par := map[string]interface{}{
+		"user": user,
+	}
+	return nc.Exec("user.getTags", par)
+}
+
 // UserSetTags set tags on user's prefix.
 // Returns the response object from Nexus or error.
 func (nc *NexusConn) UserSetTags(user string, prefix string, tags map[string]interface{}) (interface{}, error) {
