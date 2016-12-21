@@ -419,6 +419,17 @@ func (nc *NexusConn) Login(user string, pass string) (interface{}, error) {
 	return res, nil
 }
 
+// Version retrieves the server version
+// Returns the response object from Nexus or error.
+func (nc *NexusConn) Version() (interface{}, error) {
+	par := map[string]interface{}{}
+	res, err := nc.Exec("sys.version", par)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
 // Id returns the connection id after a login.
 func (nc *NexusConn) Id() string {
 	return nc.connId
