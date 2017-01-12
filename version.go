@@ -10,8 +10,8 @@ import (
 
 var Version = &nxcore.NxVersion{
 	Major: 1,
-	Minor: 0,
-	Patch: 1,
+	Minor: 4,
+	Patch: 0,
 }
 
 func isVersionCompatible(v *nxcore.NxVersion) bool {
@@ -21,11 +21,14 @@ func isVersionCompatible(v *nxcore.NxVersion) bool {
 	if v.Major != Version.Major {
 		return false
 	}
+	if v.Minor < Version.Minor {
+		return false
+	}
 	return true
 }
 
 func getNexusVersion(nc *nxcore.NexusConn) *nxcore.NxVersion {
-	res, err := nc.Exec("sys.version", nil)
+	res, err := nc.Version()
 	if err == nil {
 		return parseVersionString(ei.N(res).M("version").StringZ())
 	}

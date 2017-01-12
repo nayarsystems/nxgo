@@ -28,6 +28,7 @@ type UserInfo struct {
 	Whitelist   []string                          `json:"whitelist"`
 	Blacklist   []string                          `json:"blacklist"`
 	MaxSessions int                               `json:"maxsessions"`
+	Disabled    bool                              `json:"disabled"`
 }
 
 // UserList lists users from Nexus user's table.
@@ -53,6 +54,15 @@ func (nc *NexusConn) UserList(prefix string, limit int, skip int) ([]UserInfo, e
 	}
 
 	return users, nil
+}
+
+// UserGetTags gets the user tags
+// Returns the response object from Nexus or error.
+func (nc *NexusConn) UserGetTags(user string) (interface{}, error) {
+	par := map[string]interface{}{
+		"user": user,
+	}
+	return nc.Exec("user.getTags", par)
 }
 
 // UserSetTags set tags on user's prefix.
@@ -160,4 +170,15 @@ func (nc *NexusConn) UserSetMaxSessions(user string, sessions int) (interface{},
 		"maxsessions": sessions,
 	}
 	return nc.Exec("user.setMaxSessions", par)
+}
+
+// UserSetDisable set disable flag on an user
+// Setting the value to true will prevent any login from this user
+// Returns the response object from Nexus or error.
+func (nc *NexusConn) UserSetDisabled(user string, disabled bool) (interface{}, error) {
+	par := map[string]interface{}{
+		"user":     user,
+		"disabled": disabled,
+	}
+	return nc.Exec("user.setDisabled", par)
 }

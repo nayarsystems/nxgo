@@ -74,10 +74,12 @@ func (e *JsonRpcErr) Data() interface{} {
 // data is an optional extra info object.
 func NewJsonRpcErr(code int, message string, data interface{}) error {
 	if code < 0 {
-		if message != "" {
-			message = fmt.Sprintf("%s:[%s]", ErrStr[code], message)
-		} else {
-			message = ErrStr[code]
+		if errstr, ok := ErrStr[code]; ok {
+			if message != "" {
+				message = fmt.Sprintf("%s:[%s]", errstr, message)
+			} else {
+				message = errstr
+			}
 		}
 	}
 
@@ -414,6 +416,17 @@ func (nc *NexusConn) Login(user string, pass string) (interface{}, error) {
 		return nil, err
 	}
 	nc.connId = ei.N(res).M("connid").StringZ()
+	return res, nil
+}
+
+// Version retrieves the server version
+// Returns the response object from Nexus or error.
+func (nc *NexusConn) Version() (interface{}, error) {
+	par := map[string]interface{}{}
+	res, err := nc.Exec("sys.version", par)
+	if err != nil {
+		return nil, err
+	}
 	return res, nil
 }
 

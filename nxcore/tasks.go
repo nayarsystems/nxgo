@@ -130,10 +130,12 @@ func (t *Task) SendResult(res interface{}) (interface{}, error) {
 // Returns the response object from Nexus or error.
 func (t *Task) SendError(code int, message string, data interface{}) (interface{}, error) {
 	if code < 0 {
-		if message != "" {
-			message = fmt.Sprintf("%s:[%s]", ErrStr[code], message)
-		} else {
-			message = ErrStr[code]
+		if errstr, ok := ErrStr[code]; ok {
+			if message != "" {
+				message = fmt.Sprintf("%s:[%s]", errstr, message)
+			} else {
+				message = errstr
+			}
 		}
 	}
 	par := map[string]interface{}{
@@ -165,4 +167,10 @@ func (t *Task) Accept() (interface{}, error) {
 // GetConn retrieves the task underlying nexus connection.
 func (t *Task) GetConn() *NexusConn {
 	return t.nc
+}
+
+// NewTask creates a new task with the provided Nexus connection.
+// Usually tasks are created on TaskPull, but this method is usefull for testing purposes.
+func NewTask(conn *NexusConn) *Task {
+	return &Task{nc: conn}
 }
