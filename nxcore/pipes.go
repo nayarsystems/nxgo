@@ -54,6 +54,17 @@ func (p *Pipe) Write(msg interface{}) (interface{}, error) {
 	return p.nc.Exec("pipe.write", par)
 }
 
+// WriteN writes every item in the slice as a single message through the pipe.
+// Returns the response object from Nexus or error.
+func (p *Pipe) WriteN(msgs []interface{}) (interface{}, error) {
+	par := map[string]interface{}{
+		"pipeid": p.pipeId,
+		"msg":    msgs,
+		"multi":  true,
+	}
+	return p.nc.Exec("pipe.write", par)
+}
+
 // Read reads up to (max) messages from pipe or until timeout occurs.
 func (p *Pipe) Read(max int, timeout time.Duration) (*PipeData, error) {
 	par := map[string]interface{}{
