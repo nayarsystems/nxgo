@@ -65,6 +65,16 @@ func (nc *NexusConn) UserGetTags(user string) (interface{}, error) {
 	return nc.Exec("user.getTags", par)
 }
 
+// UserGetEffectiveTags gets the user effective tags on a prefix (higher tags on hierachy will overwrite lower ones)
+// Returns the response object from Nexus or error.
+func (nc *NexusConn) UserGetEffectiveTags(user string, prefix string) (interface{}, error) {
+	par := map[string]interface{}{
+		"user":   user,
+		"prefix": prefix,
+	}
+	return nc.Exec("user.getEffectiveTags", par)
+}
+
 // UserSetTags set tags on user's prefix.
 // Returns the response object from Nexus or error.
 func (nc *NexusConn) UserSetTags(user string, prefix string, tags map[string]interface{}) (interface{}, error) {
