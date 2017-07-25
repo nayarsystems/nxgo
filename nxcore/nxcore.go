@@ -103,19 +103,21 @@ type JsonRpcRes struct {
 
 // NexusConn represents the Nexus connection.
 type NexusConn struct {
-	connId       string
-	conn         net.Conn
-	connRx       *smartio.SmartReader
-	connTx       *smartio.SmartWriter
-	reqCount     uint64
-	resTable     map[uint64]chan *JsonRpcRes
-	resTableLock sync.Mutex
-	chReq        chan *JsonRpcReq
-	closed       int32 //Goroutine safe bool
-	context      context.Context
-	cancelFun    context.CancelFunc
-	wdog         int64
-	NexusVersion *NxVersion
+	connId            string
+	conn              net.Conn
+	connRx            *smartio.SmartReader
+	connTx            *smartio.SmartWriter
+	reqCount          uint64
+	resTable          map[uint64]chan *JsonRpcRes
+	resTableLock      sync.Mutex
+	chReq             chan *JsonRpcReq
+	closed            int32 //Goroutine safe bool
+	context           context.Context
+	cancelFun         context.CancelFunc
+	wdog              int64
+	NexusVersion      *NxVersion
+	inactivityTimeout time.Duration
+	inactivityTimer   *time.Timer
 }
 
 type NxVersion struct {
@@ -207,14 +209,17 @@ type PipeOpts struct {
 // NewNexusConn creates new nexus connection from net.conn
 func NewNexusConn(conn net.Conn) *NexusConn {
 	nc := &NexusConn{
-		conn:         conn,
-		connRx:       smartio.NewSmartReader(conn),
-		connTx:       smartio.NewSmartWriter(conn),
-		resTable:     make(map[uint64]chan *JsonRpcRes),
-		chReq:        make(chan *JsonRpcReq, 16),
-		wdog:         60,
-		NexusVersion: &NxVersion{0, 0, 0},
+		conn:              conn,
+		connRx:            smartio.NewSmartReader(conn),
+		connTx:            smartio.NewSmartWriter(conn),
+		resTable:          make(map[uint64]chan *JsonRpcRes),
+		chReq:             make(chan *JsonRpcReq, 16),
+		wdog:              60,
+		NexusVersion:      &NxVersion{0, 0, 0},
+		inactivityTimeout: -1 * time.Second,
+		inactivityTimer:   time.NewTimer(-1 * time.Second),
 	}
+	<-nc.inactivityTimer.C
 	nc.context, nc.cancelFun = context.WithCancel(context.Background())
 	go nc.sendWorker()
 	go nc.recvWorker()
@@ -246,6 +251,8 @@ func (nc *NexusConn) mainWorker() {
 	defer tick.Stop()
 	for {
 		select {
+		case <-nc.inactivityTimer.C:
+			return
 		case <-tick.C:
 			now := time.Now().Unix()
 			wdog := atomic.LoadInt64(&nc.wdog)
@@ -351,6 +358,11 @@ func (nc *NexusConn) ExecNoWait(method string, params interface{}) (id uint64, r
 		err = NewJsonRpcErr(ErrConnClosed, "", nil)
 		return
 	}
+
+	if method != "sys.ping" && nc.inactivityTimeout != (-1*time.Second) {
+		nc.inactivityTimer.Reset(nc.inactivityTimeout)
+	}
+
 	id, rch = nc.newId()
 	req := &JsonRpcReq{
 		Id:     id,
@@ -401,6 +413,17 @@ func (nc *NexusConn) Ping(timeout time.Duration) (err error) {
 	case <-nc.context.Done():
 		err = NewJsonRpcErr(ErrConnClosed, "", nil)
 	}
+	return
+}
+
+//SetSessionExpirationTimeout sets an expiration timeout. When it is reached the connection will be closed
+func (nc *NexusConn) SetInactivityControl(timeout time.Duration) (err error) {
+	if nc.Closed() {
+		err = NewJsonRpcErr(ErrConnClosed, "", nil)
+		return
+	}
+	nc.inactivityTimeout = timeout
+	nc.inactivityTimer = time.NewTimer(timeout)
 	return
 }
 
