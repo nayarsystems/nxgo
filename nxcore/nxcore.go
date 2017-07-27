@@ -134,7 +134,7 @@ func (v *NxVersion) String() string {
 type Task struct {
 	nc           *NexusConn
 	Id           string                 `json:"id"`
-	Stat         string                 `json:"state""`
+	Stat         string                 `json:"state"`
 	Path         string                 `json:"path"`
 	Prio         int                    `json:"priority"`
 	Ttl          int                    `json:"ttl"`
@@ -417,7 +417,7 @@ func (nc *NexusConn) Ping(timeout time.Duration) (err error) {
 }
 
 //SetSessionExpirationTimeout sets an expiration timeout. When it is reached the connection will be closed
-func (nc *NexusConn) SetInactivityControl(timeout time.Duration) (err error) {
+func (nc *NexusConn) SetInactivityTimeout(timeout time.Duration) (err error) {
 	if nc.Closed() {
 		err = NewJsonRpcErr(ErrConnClosed, "", nil)
 		return
