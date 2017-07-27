@@ -219,7 +219,9 @@ func NewNexusConn(conn net.Conn) *NexusConn {
 		inactivityTimeout: -1 * time.Second,
 		inactivityTimer:   time.NewTimer(-1 * time.Second),
 	}
+	//This line is not blocking. By default a negative duration on a timer makes it stop.
 	<-nc.inactivityTimer.C
+
 	nc.context, nc.cancelFun = context.WithCancel(context.Background())
 	go nc.sendWorker()
 	go nc.recvWorker()
@@ -359,7 +361,7 @@ func (nc *NexusConn) ExecNoWait(method string, params interface{}) (id uint64, r
 		return
 	}
 
-	if method != "sys.ping" && nc.inactivityTimeout != (-1*time.Second) {
+	if method != "sys.ping" && nc.inactivityTimeout > 0 {
 		nc.inactivityTimer.Reset(nc.inactivityTimeout)
 	}
 
@@ -423,7 +425,13 @@ func (nc *NexusConn) SetInactivityTimeout(timeout time.Duration) (err error) {
 		return
 	}
 	nc.inactivityTimeout = timeout
-	nc.inactivityTimer = time.NewTimer(timeout)
+	if timeout == 0 {
+		if !nc.inactivityTimer.Stop() {
+			<-nc.inactivityTimer.C
+		}
+	} else {
+		nc.inactivityTimer.Reset(timeout)
+	}
 	return
 }
 
