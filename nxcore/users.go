@@ -1,6 +1,9 @@
 package nxcore
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // UserCreate creates new user in Nexus user's table.
 // Returns the response object from Nexus or error.
@@ -23,6 +26,7 @@ func (nc *NexusConn) UserDelete(user string) (interface{}, error) {
 
 type UserInfo struct {
 	User        string                            `json:"user"`
+	CreatedAt   time.Time                         `json:"createdAt"`
 	Tags        map[string]map[string]interface{} `json:"tags"`
 	Templates   []string                          `json:"templates"`
 	Whitelist   []string                          `json:"whitelist"`
