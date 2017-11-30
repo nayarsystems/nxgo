@@ -89,11 +89,19 @@ func (nc *NexusConn) TaskPull(prefix string, timeout time.Duration) (*Task, erro
 
 // TaskList returns how many push/pulls are happening on a path and its children
 // Returns a TaskList or error.
-func (nc *NexusConn) TaskList(prefix string, limit int, skip int) ([]Task, error) {
+func (nc *NexusConn) TaskList(prefix string, limit int, skip int, opts ...*ListOpts) ([]Task, error) {
 	par := map[string]interface{}{
 		"prefix": prefix,
 		"limit":  limit,
 		"skip":   skip,
+	}
+	if len(opts) > 0 {
+		if opts[0].LimitByDepth {
+			par["depth"] = opts[0].Depth
+		}
+		if opts[0].Filter != "" {
+			par["filter"] = opts[0].Filter
+		}
 	}
 	res, err := nc.Exec("task.list", par)
 	if err != nil {

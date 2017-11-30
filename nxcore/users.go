@@ -37,11 +37,19 @@ type UserInfo struct {
 
 // UserList lists users from Nexus user's table.
 // Returns a list of UserInfo or error.
-func (nc *NexusConn) UserList(prefix string, limit int, skip int) ([]UserInfo, error) {
+func (nc *NexusConn) UserList(prefix string, limit int, skip int, opts ...*ListOpts) ([]UserInfo, error) {
 	par := map[string]interface{}{
 		"prefix": prefix,
 		"limit":  limit,
 		"skip":   skip,
+	}
+	if len(opts) > 0 {
+		if opts[0].LimitByDepth {
+			par["depth"] = opts[0].Depth
+		}
+		if opts[0].Filter != "" {
+			par["filter"] = opts[0].Filter
+		}
 	}
 	res, err := nc.Exec("user.list", par)
 	if err != nil {

@@ -204,6 +204,13 @@ type PipeOpts struct {
 	Length int // Pipe buffer capacity
 }
 
+// ListOpts represents the common options when requesting a list
+type ListOpts struct {
+	LimitByDepth bool   // Enables the limit of the search to a number of subprefixes
+	Depth        int    // If LimitByDepth is true, this depth is used (0 means the exact prefix)
+	Filter       string // A RE2 regular expression to filter prefixes on the search
+}
+
 // NewNexusConn creates new nexus connection from net.conn
 func NewNexusConn(conn net.Conn) *NexusConn {
 	nc := &NexusConn{

@@ -21,11 +21,19 @@ type SessionInfo struct {
 
 // Sessions returns info of the users sessions
 // Returns a list of SessionInfo structs or an error
-func (nc *NexusConn) SessionList(prefix string, limit int, skip int) ([]UserSessions, error) {
+func (nc *NexusConn) SessionList(prefix string, limit int, skip int, opts ...*ListOpts) ([]UserSessions, error) {
 	par := map[string]interface{}{
 		"prefix": prefix,
 		"limit":  limit,
 		"skip":   skip,
+	}
+	if len(opts) > 0 {
+		if opts[0].LimitByDepth {
+			par["depth"] = opts[0].Depth
+		}
+		if opts[0].Filter != "" {
+			par["filter"] = opts[0].Filter
+		}
 	}
 	res, err := nc.Exec("sys.session.list", par)
 	if err != nil {
