@@ -1,10 +1,10 @@
 package nxcore
 
 import (
+	"context"
 	"time"
 
 	"github.com/jaracil/ei"
-	"golang.org/x/net/context"
 )
 
 // PipeOpen Creates a new pipe from pipe identification string.

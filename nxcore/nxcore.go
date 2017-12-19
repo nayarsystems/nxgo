@@ -1,6 +1,7 @@
 package nxcore
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/jaracil/ei"
 	"github.com/jaracil/smartio"
-	"golang.org/x/net/context"
 )
 
 const (
