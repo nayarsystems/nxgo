@@ -24,6 +24,16 @@ func (nc *NexusConn) UserDelete(user string) (interface{}, error) {
 	return nc.Exec("user.delete", par)
 }
 
+// UserRename changes the name of a user from Nexus user's table.
+// Returns the response object from Nexus or error.
+func (nc *NexusConn) UserRename(user string, new string) (interface{}, error) {
+	par := map[string]interface{}{
+		"user": user,
+		"new":  new,
+	}
+	return nc.Exec("user.rename", par)
+}
+
 type UserInfo struct {
 	User        string                            `json:"user"`
 	CreatedAt   time.Time                         `json:"createdAt"`
