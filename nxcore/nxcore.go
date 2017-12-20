@@ -211,6 +211,12 @@ type ListOpts struct {
 	Filter       string // A RE2 regular expression to filter prefixes on the search
 }
 
+// CountOpts represents the common options when requesting a count
+type CountOpts struct {
+	Subprefixes bool   // Include the count of the subprefixes
+	Filter      string // A RE2 regular expression to filter prefixes on the search
+}
+
 // NewNexusConn creates new nexus connection from net.conn
 func NewNexusConn(conn net.Conn) *NexusConn {
 	nc := &NexusConn{

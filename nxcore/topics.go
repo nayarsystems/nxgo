@@ -73,3 +73,20 @@ func (nc *NexusConn) TopicList(prefix string, limit int, skip int, opts ...*List
 
 	return topics, nil
 }
+
+// TopicCount counts subscriptions to topics from Nexus.
+// Returns the response object from Nexus or error.
+func (nc *NexusConn) TopicCount(prefix string, opts ...*CountOpts) (interface{}, error) {
+	par := map[string]interface{}{
+		"prefix": prefix,
+	}
+	if len(opts) > 0 {
+		if opts[0].Subprefixes {
+			par["subprefixes"] = opts[0].Subprefixes
+		}
+		if opts[0].Filter != "" {
+			par["filter"] = opts[0].Filter
+		}
+	}
+	return nc.Exec("topic.count", par)
+}

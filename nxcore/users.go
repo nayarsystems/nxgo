@@ -78,6 +78,23 @@ func (nc *NexusConn) UserList(prefix string, limit int, skip int, opts ...*ListO
 	return users, nil
 }
 
+// UserCount counts users from Nexus user's table.
+// Returns the response object from Nexus or error.
+func (nc *NexusConn) UserCount(prefix string, opts ...*CountOpts) (interface{}, error) {
+	par := map[string]interface{}{
+		"prefix": prefix,
+	}
+	if len(opts) > 0 {
+		if opts[0].Subprefixes {
+			par["subprefixes"] = opts[0].Subprefixes
+		}
+		if opts[0].Filter != "" {
+			par["filter"] = opts[0].Filter
+		}
+	}
+	return nc.Exec("user.count", par)
+}
+
 // UserGetTags gets the user tags
 // Returns the response object from Nexus or error.
 func (nc *NexusConn) UserGetTags(user string) (interface{}, error) {

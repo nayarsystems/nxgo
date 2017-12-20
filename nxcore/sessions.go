@@ -52,6 +52,23 @@ func (nc *NexusConn) SessionList(prefix string, limit int, skip int, opts ...*Li
 	return sessions, nil
 }
 
+// SessionCount counts sessions from Nexus session's table.
+// Returns the response object from Nexus or error.
+func (nc *NexusConn) SessionCount(prefix string, opts ...*CountOpts) (interface{}, error) {
+	par := map[string]interface{}{
+		"prefix": prefix,
+	}
+	if len(opts) > 0 {
+		if opts[0].Subprefixes {
+			par["subprefixes"] = opts[0].Subprefixes
+		}
+		if opts[0].Filter != "" {
+			par["filter"] = opts[0].Filter
+		}
+	}
+	return nc.Exec("sys.session.count", par)
+}
+
 // SessionKick forces the node owner of the client connection to close it
 // Returns the response object from Nexus or error.
 func (nc *NexusConn) SessionKick(connId string) (interface{}, error) {
