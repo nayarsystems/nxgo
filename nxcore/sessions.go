@@ -21,11 +21,19 @@ type SessionInfo struct {
 
 // Sessions returns info of the users sessions
 // Returns a list of SessionInfo structs or an error
-func (nc *NexusConn) SessionList(prefix string, limit int, skip int) ([]UserSessions, error) {
+func (nc *NexusConn) SessionList(prefix string, limit int, skip int, opts ...*ListOpts) ([]UserSessions, error) {
 	par := map[string]interface{}{
 		"prefix": prefix,
 		"limit":  limit,
 		"skip":   skip,
+	}
+	if len(opts) > 0 {
+		if opts[0].LimitByDepth {
+			par["depth"] = opts[0].Depth
+		}
+		if opts[0].Filter != "" {
+			par["filter"] = opts[0].Filter
+		}
 	}
 	res, err := nc.Exec("sys.session.list", par)
 	if err != nil {
@@ -42,6 +50,23 @@ func (nc *NexusConn) SessionList(prefix string, limit int, skip int) ([]UserSess
 	}
 
 	return sessions, nil
+}
+
+// SessionCount counts sessions from Nexus session's table.
+// Returns the response object from Nexus or error.
+func (nc *NexusConn) SessionCount(prefix string, opts ...*CountOpts) (interface{}, error) {
+	par := map[string]interface{}{
+		"prefix": prefix,
+	}
+	if len(opts) > 0 {
+		if opts[0].Subprefixes {
+			par["subprefixes"] = opts[0].Subprefixes
+		}
+		if opts[0].Filter != "" {
+			par["filter"] = opts[0].Filter
+		}
+	}
+	return nc.Exec("sys.session.count", par)
 }
 
 // SessionKick forces the node owner of the client connection to close it

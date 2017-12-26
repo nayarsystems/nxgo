@@ -1,6 +1,7 @@
 package nxcore
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/jaracil/ei"
 	"github.com/jaracil/smartio"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -204,6 +204,19 @@ type TopicData struct {
 // PipeOpts represents pipe creation options
 type PipeOpts struct {
 	Length int // Pipe buffer capacity
+}
+
+// ListOpts represents the common options when requesting a list
+type ListOpts struct {
+	LimitByDepth bool   // Enables the limit of the search to a number of subprefixes
+	Depth        int    // If LimitByDepth is true, this depth is used (0 means the exact prefix)
+	Filter       string // A RE2 regular expression to filter prefixes on the search
+}
+
+// CountOpts represents the common options when requesting a count
+type CountOpts struct {
+	Subprefixes bool   // Include the count of the subprefixes
+	Filter      string // A RE2 regular expression to filter prefixes on the search
 }
 
 // NewNexusConn creates new nexus connection from net.conn

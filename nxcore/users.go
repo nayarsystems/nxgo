@@ -1,6 +1,9 @@
 package nxcore
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // UserCreate creates new user in Nexus user's table.
 // Returns the response object from Nexus or error.
@@ -21,8 +24,19 @@ func (nc *NexusConn) UserDelete(user string) (interface{}, error) {
 	return nc.Exec("user.delete", par)
 }
 
+// UserRename changes the name of a user from Nexus user's table.
+// Returns the response object from Nexus or error.
+func (nc *NexusConn) UserRename(user string, new string) (interface{}, error) {
+	par := map[string]interface{}{
+		"user": user,
+		"new":  new,
+	}
+	return nc.Exec("user.rename", par)
+}
+
 type UserInfo struct {
 	User        string                            `json:"user"`
+	CreatedAt   time.Time                         `json:"createdAt"`
 	Tags        map[string]map[string]interface{} `json:"tags"`
 	Templates   []string                          `json:"templates"`
 	Whitelist   []string                          `json:"whitelist"`
@@ -33,11 +47,19 @@ type UserInfo struct {
 
 // UserList lists users from Nexus user's table.
 // Returns a list of UserInfo or error.
-func (nc *NexusConn) UserList(prefix string, limit int, skip int) ([]UserInfo, error) {
+func (nc *NexusConn) UserList(prefix string, limit int, skip int, opts ...*ListOpts) ([]UserInfo, error) {
 	par := map[string]interface{}{
 		"prefix": prefix,
 		"limit":  limit,
 		"skip":   skip,
+	}
+	if len(opts) > 0 {
+		if opts[0].LimitByDepth {
+			par["depth"] = opts[0].Depth
+		}
+		if opts[0].Filter != "" {
+			par["filter"] = opts[0].Filter
+		}
 	}
 	res, err := nc.Exec("user.list", par)
 	if err != nil {
@@ -54,6 +76,23 @@ func (nc *NexusConn) UserList(prefix string, limit int, skip int) ([]UserInfo, e
 	}
 
 	return users, nil
+}
+
+// UserCount counts users from Nexus user's table.
+// Returns the response object from Nexus or error.
+func (nc *NexusConn) UserCount(prefix string, opts ...*CountOpts) (interface{}, error) {
+	par := map[string]interface{}{
+		"prefix": prefix,
+	}
+	if len(opts) > 0 {
+		if opts[0].Subprefixes {
+			par["subprefixes"] = opts[0].Subprefixes
+		}
+		if opts[0].Filter != "" {
+			par["filter"] = opts[0].Filter
+		}
+	}
+	return nc.Exec("user.count", par)
 }
 
 // UserGetTags gets the user tags
