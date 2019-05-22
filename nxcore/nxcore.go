@@ -29,6 +29,7 @@ const (
 	ErrInvalidTask      = -32002
 	ErrCancel           = -32001
 	ErrTimeout          = -32000
+	ErrNotSupported     = -32099
 )
 
 var ErrStr = map[int]string{
@@ -47,6 +48,7 @@ var ErrStr = map[int]string{
 	ErrTtlExpired:       "TTL expired",
 	ErrLockNotOwned:     "Lock not owned",
 	ErrConnClosed:       "Connection is closed",
+	ErrNotSupported:     "Not supported",
 }
 
 type JsonRpcErr struct {
@@ -300,7 +302,16 @@ func (nc *NexusConn) sendWorker() {
 		req.Jsonrpc = "2.0"
 		buf, err := json.Marshal(req)
 		if err != nil {
-			break
+			nc.resTableLock.Lock()
+			ch := nc.resTable[req.Id]
+			nc.resTableLock.Unlock()
+			if ch != nil {
+				select {
+				case ch <- &JsonRpcRes{Jsonrpc: "2.0", Id: req.Id, Result: nil, Error: &JsonRpcErr{Cod: ErrParse, Mess: ErrStr[ErrParse], Dat: nil}}:
+				default:
+				}
+			}
+			continue
 		}
 		if !nc.Closed() {
 			_, err = nc.connTx.Write(buf)
