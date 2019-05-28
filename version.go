@@ -10,8 +10,8 @@ import (
 
 var Version = &nxcore.NxVersion{
 	Major: 1,
-	Minor: 9,
-	Patch: 0,
+	Minor: 8,
+	Patch: 1,
 }
 
 func isVersionCompatible(v *nxcore.NxVersion) bool {
